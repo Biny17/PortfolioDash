@@ -1,0 +1,1 @@
+external_stylesheets=[dbc.themes.BOOTSTRAP]
