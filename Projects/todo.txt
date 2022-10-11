@@ -1,2 +1,3 @@
-- Histogram + rayleigh fit
+- Histogram + rayleigh fit -
 - Additional card
+- Améliorer le hover des maps

@@ -12,7 +12,7 @@ from area import area
 import plotly.express as px
 import plotly.io as pio
 
-app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Tristan Gallet'
 
 HERE = Path(__file__).parent
@@ -67,7 +67,7 @@ banniere = dbc.Navbar(
         [
             html.Img(id="logo", src=LOGO, height="40px"), 
             dbc.NavbarBrand("Tristan Gallet", className="ms-2"),
-            html.Div(html.H3("Portfolio - données de AirBNB"), style={'color':'#FFFFFF', 'margin-left':'20px'}),
+            html.Div(html.H3("Portfolio - AirBNB"), style={'color':'#FFFFFF', 'margin-left':'20px'}),
             dbc.Collapse(
                 dbc.Nav(
                     [mecontacter],
@@ -79,9 +79,9 @@ banniere = dbc.Navbar(
             ),
         ],
     ),
-    color="primary",
+    color="#040200",
     dark=True,
-    className="mb-5",
+    className="mb-2",
 )
 
 nomToNumero = {
@@ -133,8 +133,8 @@ def cartePrixAuMetreCarre():
     prix_m2_arr = pd.DataFrame({"neighbourhood" : keys, "PrixMcarré": values})
     fig = px.choropleth_mapbox(prix_m2_arr, geojson=quartierGeo, color='PrixMcarré',
                 locations='neighbourhood', featureidkey="properties.neighbourhood",
-                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=10.4,
-                opacity=0.6, hover_data=["neighbourhood", "PrixMcarré"], color_continuous_scale='purples')
+                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
+                opacity=0.7, hover_data=["neighbourhood", "PrixMcarré"], color_continuous_scale='purples')
     fig.update_layout(autosize=True)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
@@ -154,8 +154,8 @@ def carteDensite():
     mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
     fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='nb/hectares',
               locations='neighbourhood', featureidkey="properties.neighbourhood",
-              mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=10.4,
-              opacity=0.6, hover_data=["Arrondissement", "nb/hectares", "#logements"],color_continuous_scale='reds')
+              mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
+              opacity=0.8, hover_data=["Arrondissement", "nb/hectares", "#logements"],color_continuous_scale='reds')
     fig.update_layout(autosize=True)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
@@ -166,7 +166,7 @@ def cartePrix():
     mapData = mapData.rename(columns={"neighbourhood_cleansed":"quartier"})
     fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='prix Moyen',
                 locations='quartier', featureidkey="properties.neighbourhood",
-                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=10.4,
+                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.6, color_continuous_scale='greens')
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     fig.update_layout(autosize=True)
@@ -176,7 +176,7 @@ def carteScore():
     mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_rating")["review_scores_rating"].reset_index(name="Evalutation")
     fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evalutation',
                 locations='neighbourhood_cleansed', featureidkey="properties.neighbourhood",
-                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=10.4,
+                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.6, color_continuous_scale='blues')
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     fig.update_layout(autosize=True)
@@ -186,7 +186,7 @@ def carteValue():
     mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_value")["review_scores_value"].reset_index(name="Evalutation")
     fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evalutation',
                 locations='neighbourhood_cleansed', featureidkey="properties.neighbourhood",
-                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=10.4,
+                mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.6, color_continuous_scale='oranges')
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     fig.update_layout(autosize=True)
@@ -208,6 +208,7 @@ carteA = dbc.Card(
                 id="DD graph1",
                 clearable=False
             ), style={'margin-bottom':'1rem'}),
+            html.H4("Nom du graphique 1", id = "Titre1"),
             dcc.Graph(
                 id="graph1",
                 figure=cartePrix()
@@ -215,7 +216,7 @@ carteA = dbc.Card(
         ]
     ),
     id="carte1",
-    color='light'
+    color='#FFFFFF',
 )
 
 carteB = dbc.Card(
@@ -235,6 +236,7 @@ carteB = dbc.Card(
                 id="DD graph2",
                 clearable=False
             ), style={'margin-bottom':'1rem'}),
+            html.H4(id='Titre2'),
             dcc.Graph(
                 id="graph2",
                 figure=carteDensite()
@@ -242,18 +244,33 @@ carteB = dbc.Card(
         ]
     ),
     id="carte2",
-    color='light'
+    color='#FFFFFF',
 )
+
+
 
 cards1 = html.Div(
     [
-        dbc.Row(
-            [
-                dbc.Col(carteA),
-                dbc.Col(carteB)
-            ],
-            className="mb-6"
-        )
+        dbc.Alert(
+            children=[
+                "Données pour la ville de Paris de ", 
+                html.A("Inside AirBNB", href="http://insideairbnb.com/get-the-data/"),
+                html.Br()
+                ],
+            #style={"padding":"15px 20px 15px 60px"}
+        color="success"),
+        dbc.Card([
+            html.H4("Comparer deux cartes chloropleth par arrondissements de Paris:", 
+                    style={"margin":"15px 20px 10px 35px"},
+                    className="card-title"),
+            dbc.Row(
+                [
+                    dbc.Col(carteA),
+                    dbc.Col(carteB)
+                ],
+                className="g-0",
+            )
+        ], style={"background-color":"#ebefff"})
     ]
 )
 
@@ -265,14 +282,39 @@ def update_graph2(choix):
     return eval(f"{choix}()")
     
 @app.callback(
+    Output('Titre1', 'children'),
+    Input('DD graph1', 'value')
+)
+def update_graph_title1(choix):
+    if choix == 'cartePrix': return "Prix moyen pour 2 personnes"
+    if choix == 'carteDensite': return "Nombre de logements par hectare"
+    if choix == 'cartePrixAuMetreCarre': return "Prix du m²"
+    if choix == 'carteScore': return "Note générale du logement sur 5"
+    if choix == 'carteValue': return "Note rapport qualité-prix sur 5"
+
+@app.callback(
     Output('graph1', 'figure'),
     Input('DD graph1', 'value')
 )
 def update_graph1(choix):
     return eval(f"{choix}()")
 
-app.layout = html.Div(
-    [banniere, cards1]
+@app.callback(
+    Output('Titre2', 'children'),
+    Input('DD graph2', 'value')
+)
+def update_graph_title2(choix):
+    if choix == 'cartePrix': return "Prix moyen pour 2 personnes"
+    if choix == 'carteDensite': return "Nombre de logements par hectare"
+    if choix == 'cartePrixAuMetreCarre': return "Prix du m²"
+    if choix == 'carteScore': return "Note générale du logement sur 5"
+    if choix == 'carteValue': return "Note rapport qualité-prix sur 5"
+
+app.layout = dbc.Container(
+    [banniere, cards1],
+    fluid = True,
+    className="dbc",
+    style={"padding":"0px"}
 )
 
 if __name__ == "__main__":
