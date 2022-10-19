@@ -84,57 +84,22 @@ banniere = dbc.Navbar(
     className="mb-2",
 )
 
-nomToNumero = {
-    "Louvre":"1er",
-    "Bourse":"2eme",
-    "Temple":"3eme",
-    "Hôtel-de-Ville":"4eme",
-    "Panthéon":"5eme",
-    "Luxembourg":"6eme",
-    "Palais-Bourbon":"7eme",
-    "Élysée":"8eme",
-    "Opéra":"9eme",
-    "Entrepôt":"10eme",
-    "Popincourt":"11eme",
-    "Reuilly":"12eme",
-    "Gobelins":"13eme",
-    "Observatoire":"14eme",
-    "Vaugirard":"15eme",
-    "Passy":"16eme",
-    "Batignolles-Monceau":"17eme",
-    "Buttes-Montmartre":"18eme",
-    "Buttes-Chaumont":"19eme",
-    "Ménilmontant":"20eme"
-}
-
 def cartePrixAuMetreCarre():
-    prix_m2_arr="""1er arrondissement : 13.445 €/m2
-2eme arrondissement : 12.570 €/m2
-3eme arrondissement : 12.982 €/m2
-4eme arrondissement : 13.928 €/m2
-5eme arrondissement : 13.186 €/m2
-6eme arrondissement : 15.367 €/m2
-7eme arrondissement : 14.827 €/m2
-8eme arrondissement : 12.510 €/m2
-9eme arrondissement : 11.872 €/m2
-10eme arrondissement : 11.065 €/m2
-11eme arrondissement : 11.305 €/m2
-12eme arrondissement : 10.355 €/m2
-13eme arrondissement : 9.916 €/m2
-14eme arrondissement : 10.805 €/m2
-15eme arrondissement : 10.976 €/m2
-16eme arrondissement : 12.086 €/m2
-17eme arrondissement : 11.767 €/m2
-18eme arrondissement : 10.855 €/m2
-19eme arrondissement : 9.475 €/m2
-20eme arrondissement : 9.874 €/m2""".splitlines()
     keys = [{v: k for k, v in nomToNumero.items()}[a] for a in [a[0:a.find(" ")] for a in prix_m2_arr]]
     values = [int(a[a.find(":")+2:a.find("€")-1].replace(".","")) for a in prix_m2_arr]
-    prix_m2_arr = pd.DataFrame({"neighbourhood" : keys, "PrixMcarré": values})
-    fig = px.choropleth_mapbox(prix_m2_arr, geojson=quartierGeo, color='PrixMcarré',
+    mapData = pd.DataFrame({"neighbourhood" : keys, "PrixMcarré": values})
+    mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
+    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='PrixMcarré',
                 locations='neighbourhood', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
-                opacity=0.7, hover_data=["neighbourhood", "PrixMcarré"], color_continuous_scale='purples')
+                opacity=0.7, color_continuous_scale='purples', 
+                hover_data={
+                    "neighbourhood":False,
+                    "Arrondissement":True
+                    },
+                labels={
+                    "PrixMcarré":"Prix du m²"
+                })
     fig.update_layout(autosize=True)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
@@ -150,44 +115,71 @@ def carteDensite():
     mapData["superficie"] = mapData["neighbourhood_cleansed"].apply(lambda x: neighbourhoodArea[x])
     #nombre de logement par hectares par quartier
     mapData["nb/hectares"] = round(mapData["#logements"]/(mapData["superficie"]/10000), 2)
-    mapData = mapData.rename(columns={mapData.columns[0] : 'neighbourhood'})
+    mapData = mapData.rename(columns={"neighbourhood_cleansed" : 'neighbourhood'})
     mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
     fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='nb/hectares',
               locations='neighbourhood', featureidkey="properties.neighbourhood",
               mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
-              opacity=0.8, hover_data=["Arrondissement", "nb/hectares", "#logements"],color_continuous_scale='reds')
+              opacity=0.8, color_continuous_scale='reds',
+              labels={
+                  "#logements":"Nombre de logements",
+                  "nb/hectares":"Nombre de logements par hectares"
+                  },
+              hover_data={
+                  "neighbourhood":False,
+                  "Arrondissement":True,
+                  "nb/hectares":True,
+                  "#logements":True
+              })
     fig.update_layout(autosize=True)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
 def cartePrix():
-    mapData = listing.loc[listing["accommodates"]==2].groupby(["neighbourhood_cleansed"])["price"].mean().reset_index(name="prix Moyen")
-    mapData["prix Moyen"] = round(mapData["prix Moyen"],2)
-    mapData = mapData.rename(columns={"neighbourhood_cleansed":"quartier"})
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='prix Moyen',
-                locations='quartier', featureidkey="properties.neighbourhood",
+    mapData = listing.loc[listing["accommodates"]==2].groupby(["neighbourhood_cleansed"])["price"].mean().reset_index(name="Prix moyen")
+    mapData["Prix moyen"] = round(mapData["Prix moyen"],2)
+    mapData = mapData.rename(columns={"neighbourhood_cleansed":"neighbourhood"})
+    mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
+    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Prix moyen',
+                locations='neighbourhood', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
-                opacity=0.6, color_continuous_scale='greens')
+                opacity=0.6, color_continuous_scale='greens',
+                hover_data={
+                    "neighbourhood":False,
+                    "Arrondissement":True,
+                })
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     fig.update_layout(autosize=True)
     return fig
 
 def carteScore():
-    mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_rating")["review_scores_rating"].reset_index(name="Evalutation")
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evalutation',
+    mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_rating")["review_scores_rating"].reset_index(name="Evaluation")
+    mapData["Arrondissement"] = mapData["neighbourhood_cleansed"].apply(lambda x: nomToNumero[x])
+    mapData["Evaluation"] = round(mapData["Evaluation"],2)
+    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evaluation',
                 locations='neighbourhood_cleansed', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
-                opacity=0.6, color_continuous_scale='blues')
+                opacity=0.6, color_continuous_scale='blues',
+                hover_data={
+                    "neighbourhood_cleansed":False,
+                    "Arrondissement":True,
+                })
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     fig.update_layout(autosize=True)
     return fig
 
 def carteValue():
-    mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_value")["review_scores_value"].reset_index(name="Evalutation")
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evalutation',
+    mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_value")["review_scores_value"].reset_index(name="Evaluation")
+    mapData["Arrondissement"] = mapData["neighbourhood_cleansed"].apply(lambda x: nomToNumero[x])
+    mapData["Evaluation"] = round(mapData["Evaluation"],2)
+    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evaluation',
                 locations='neighbourhood_cleansed', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
-                opacity=0.6, color_continuous_scale='oranges')
+                opacity=0.6, color_continuous_scale='oranges',
+                hover_data={
+                    "neighbourhood_cleansed":False,
+                    "Arrondissement":True,
+                })
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     fig.update_layout(autosize=True)
     return fig
@@ -254,13 +246,12 @@ cards1 = html.Div(
         dbc.Alert(
             children=[
                 "Données pour la ville de Paris de ", 
-                html.A("Inside AirBNB", href="http://insideairbnb.com/get-the-data/"),
-                html.Br()
+                html.A("Inside AirBNB", href="http://insideairbnb.com/get-the-data/")
                 ],
             #style={"padding":"15px 20px 15px 60px"}
         color="success"),
         dbc.Card([
-            html.H4("Comparer deux cartes chloropleth par arrondissements de Paris:", 
+            html.H4("Comparaison de différentes métriques par arrondissements de Paris:", 
                     style={"margin":"15px 20px 10px 35px"},
                     className="card-title"),
             dbc.Row(
@@ -270,7 +261,7 @@ cards1 = html.Div(
                 ],
                 className="g-0",
             )
-        ], style={"background-color":"#ebefff"})
+        ], style={"background-color":"#FFFFF0"})
     ]
 )
 
