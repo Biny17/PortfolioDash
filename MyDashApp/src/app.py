@@ -16,8 +16,9 @@ server = app.server
 HERE = Path(__file__).parent
 LOGO = "logo.png"
 
-listing = pd.read_csv("http://data.insideairbnb.com/france/ile-de-france/paris/2022-06-06/data/listings.csv.gz")
-calendar = pd.read_csv("http://data.insideairbnb.com/france/ile-de-france/paris/2022-06-06/data/calendar.csv.gz")
+with open(HERE/"data.pickle", 'rb') as f:
+    pxmc,densite,prix,score,value,pPC,Logements,repartition = pickle.load(f)
+    
 quartierGeo = json.load(open(file=HERE/"assets"/"neighbourhoods.geojson", mode="r", encoding='utf-8'))
 
 nomToNumero = {
@@ -43,37 +44,13 @@ nomToNumero = {
     "Ménilmontant":"20eme"
 }
 
-prix_m2_arr="""1er arrondissement : 13.445 €/m2
-2eme arrondissement : 12.570 €/m2
-3eme arrondissement : 12.982 €/m2
-4eme arrondissement : 13.928 €/m2
-5eme arrondissement : 13.186 €/m2
-6eme arrondissement : 15.367 €/m2
-7eme arrondissement : 14.827 €/m2
-8eme arrondissement : 12.510 €/m2
-9eme arrondissement : 11.872 €/m2
-10eme arrondissement : 11.065 €/m2
-11eme arrondissement : 11.305 €/m2
-12eme arrondissement : 10.355 €/m2
-13eme arrondissement : 9.916 €/m2
-14eme arrondissement : 10.805 €/m2
-15eme arrondissement : 10.976 €/m2
-16eme arrondissement : 12.086 €/m2
-17eme arrondissement : 11.767 €/m2
-18eme arrondissement : 10.855 €/m2
-19eme arrondissement : 9.475 €/m2
-20eme arrondissement : 9.874 €/m2""".splitlines()
-
 numeroToNom = {v: k for k, v in nomToNumero.items()}
 
-listing['bedrooms'] = listing['bedrooms'].fillna(0)
-listing["price"] = listing["price"].apply(lambda x: int(float(x.replace("$", "").replace(",", ""))))
-listing["Arrondissement"] = listing["neighbourhood_cleansed"].apply(lambda x: nomToNumero[x])
 
 # Créer une page me contacter
 mecontacter = dbc.DropdownMenu(
     children=[
-        dbc.DropdownMenuItem(html.A("GitHub", href="#")),
+        dbc.DropdownMenuItem(html.A("GitHub", href="https://github.com/Biny17/PortfolioDash")),
         dbc.DropdownMenuItem(html.A("Linkedin", href="https://www.linkedin.com/in/tristan-gallet-0ab174206/")),
         dbc.DropdownMenuItem(divider=True),
         dbc.DropdownMenuItem(html.A("Mes réseaux", href="https://linktr.ee/tristanbiny")),
@@ -106,11 +83,7 @@ banniere = dbc.Navbar(
 )
 
 def cartePrixAuMetreCarre():
-    keys = [{v: k for k, v in nomToNumero.items()}[a] for a in [a[0:a.find(" ")] for a in prix_m2_arr]]
-    values = [int(a[a.find(":")+2:a.find("€")-1].replace(".","")) for a in prix_m2_arr]
-    mapData = pd.DataFrame({"neighbourhood" : keys, "PrixMcarré": values})
-    mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='PrixMcarré',
+    fig = px.choropleth_mapbox(pxmc, geojson=quartierGeo, color='PrixMcarré',
                 locations='neighbourhood', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.7, color_continuous_scale='purples', 
@@ -126,19 +99,7 @@ def cartePrixAuMetreCarre():
     return fig
 
 def carteDensite():
-    # Dictionnaire associant chaque quartier à son aire
-    neighbourhoodArea = dict()
-    for cartier in quartierGeo["features"]:
-        neighbourhoodArea[cartier["properties"]["neighbourhood"]] = round(area(cartier["geometry"]))
-    neighbourhoodArea["Reuilly"] += -9950000 #J'enlève la superficie du bois de Vincenne qui fait partie du 12eme
-    #Nombre de logement par quartier:
-    mapData = pd.DataFrame(listing.groupby(["neighbourhood_cleansed"])["neighbourhood_cleansed"].count().reset_index(name="#logements"))
-    mapData["superficie"] = mapData["neighbourhood_cleansed"].apply(lambda x: neighbourhoodArea[x])
-    #nombre de logement par hectares par quartier
-    mapData["nb/hectares"] = round(mapData["#logements"]/(mapData["superficie"]/10000), 2)
-    mapData = mapData.rename(columns={"neighbourhood_cleansed" : 'neighbourhood'})
-    mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='nb/hectares',
+    fig = px.choropleth_mapbox(densite, geojson=quartierGeo, color='nb/hectares',
               locations='neighbourhood', featureidkey="properties.neighbourhood",
               mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
               opacity=0.8, color_continuous_scale='reds',
@@ -157,11 +118,7 @@ def carteDensite():
     return fig
 
 def cartePrix():
-    mapData = listing.loc[listing["accommodates"]==2].groupby(["neighbourhood_cleansed"])["price"].mean().reset_index(name="Prix moyen")
-    mapData["Prix moyen"] = round(mapData["Prix moyen"],2)
-    mapData = mapData.rename(columns={"neighbourhood_cleansed":"neighbourhood"})
-    mapData["Arrondissement"] = mapData["neighbourhood"].apply(lambda x: nomToNumero[x])
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Prix moyen',
+    fig = px.choropleth_mapbox(prix, geojson=quartierGeo, color='Prix moyen',
                 locations='neighbourhood', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.6, color_continuous_scale='greens',
@@ -174,10 +131,7 @@ def cartePrix():
     return fig
 
 def carteScore():
-    mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_rating")["review_scores_rating"].reset_index(name="Evaluation")
-    mapData["Arrondissement"] = mapData["neighbourhood_cleansed"].apply(lambda x: nomToNumero[x])
-    mapData["Evaluation"] = round(mapData["Evaluation"],2)
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evaluation',
+    fig = px.choropleth_mapbox(score, geojson=quartierGeo, color='Evaluation',
                 locations='neighbourhood_cleansed', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.6, color_continuous_scale='blues',
@@ -190,10 +144,7 @@ def carteScore():
     return fig
 
 def carteValue():
-    mapData = listing.groupby("neighbourhood_cleansed").mean("review_scores_value")["review_scores_value"].reset_index(name="Evaluation")
-    mapData["Arrondissement"] = mapData["neighbourhood_cleansed"].apply(lambda x: nomToNumero[x])
-    mapData["Evaluation"] = round(mapData["Evaluation"],2)
-    fig = px.choropleth_mapbox(mapData, geojson=quartierGeo, color='Evaluation',
+    fig = px.choropleth_mapbox(value, geojson=quartierGeo, color='Evaluation',
                 locations='neighbourhood_cleansed', featureidkey="properties.neighbourhood",
                 mapbox_style="carto-positron", center={"lat":48.86, "lon": 2.35}, zoom=11,
                 opacity=0.6, color_continuous_scale='oranges',
@@ -324,14 +275,6 @@ def update_graph_title2(choix):
 def prixParChambre():
     colors = ["#89CFF0"]*5
     colors[2]="#DC143C"
-    listing.loc[listing["bedrooms"]==0, "bedrooms"] = 0.999
-    listing["prixParChambre"] = listing["price"]/listing["bedrooms"]
-    listing.loc[listing["bedrooms"]==0.999, "bedrooms"] = 0
-    pPC = listing.groupby("bedrooms")["prixParChambre"].mean().reset_index(name="prixParChambre").rename(columns={"bedrooms":"chambres"})
-    pPC["prixParChambre"] = pPC["prixParChambre"].apply(lambda x : round(x, 2))
-    pPC["chambres"] = pPC["chambres"].apply(lambda x : round(x))
-    pPC["Prix/chambre"] = pPC['prixParChambre'].apply(lambda x: f"{round(x)}€")
-    pPC = pPC.loc[pPC["chambres"] <= 4]
     fig = px.bar(pPC, x='chambres', y='prixParChambre', text='Prix/chambre',
                  hover_data={'prixParChambre':False},
                  labels={"prixParChambre":"Prix/Chambre"},
@@ -349,10 +292,6 @@ def prixParChambre():
     return fig
 
 def typeLogement():
-    Logements = listing.groupby(["room_type"])["room_type"].count()\
-                .reset_index(name="#logements")\
-                .sort_values(by=['#logements'],ascending=False)
-    Logements["room_type"] = ["Logement entier", "Chambre perso", "Chambre d'hotel","Dortoir"]
     fig = px.pie(Logements, values="#logements", names="room_type", 
                  color_discrete_sequence=px.colors.qualitative.Safe,
                  template="plotly_white")
@@ -406,7 +345,7 @@ cards3 = dbc.Card(children=[
     Input('radio_graph5', 'value'),
     Input('dropdown_graph5', 'value'))
 def prixPlot(chambres, arrond):
-    prix = listing[['price', 'neighbourhood_cleansed', 'bedrooms']]
+    prix = repartition[['price', 'neighbourhood_cleansed', 'bedrooms']]
     if chambres != 'Tout':
         prix = prix.loc[(prix['bedrooms'] == int(chambres))]
     if arrond != 'Tout':
