@@ -355,12 +355,12 @@ def prixPlot(chambres, arrond):
     prix = prix.loc[(prix['price'] < high) & (prix['price'] >= low)]['price']
     prix = prix.rename("Prix en € pour une nuit")
     fig = px.histogram(prix, x="Prix en € pour une nuit", 
-                       nbins=35, 
+                       nbins=30, 
                        color_discrete_sequence=['#800020'],
                        template="plotly_white"
                        )
     fig.update_layout(title={
-        "text":"Type de logements:",
+        "text":"Répartition des prix:",
         "x":0.5,
         "font":{
             "size":20
