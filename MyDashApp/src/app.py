@@ -3,7 +3,6 @@ from dash import Input, Output, State, html, dcc, Dash
 from pathlib import Path
 import pandas as pd 
 import numpy as np
-import matplotlib.pyplot as plt
 import pickle
 import json
 from area import area
@@ -51,13 +50,11 @@ numeroToNom = {v: k for k, v in nomToNumero.items()}
 mecontacter = dbc.DropdownMenu(
     children=[
         dbc.DropdownMenuItem(html.A("GitHub", href="https://github.com/Biny17/PortfolioDash")),
-        dbc.DropdownMenuItem(html.A("Linkedin", href="https://www.linkedin.com/in/tristan-gallet-0ab174206/")),
-        dbc.DropdownMenuItem(divider=True),
-        dbc.DropdownMenuItem(html.A("Mes réseaux", href="https://linktr.ee/tristanbiny")),
+        dbc.DropdownMenuItem(html.A("Jeu vidéo", href="https://biny17.itch.io/dragon-war"))
     ],
     nav=True,
     in_navbar=True,
-    label="Me contacter",
+    label="Projects",
 )
 
 banniere = dbc.Navbar(
@@ -328,7 +325,7 @@ prixPlotCallback = dbc.Card(
                      clearable=False),
         html.Br(),
         html.Label('Nombre de chambres:'),
-        dcc.RadioItems(["Tout","1","2","3"], value='Tout', id='radio_graph5')
+        dcc.RadioItems(["Tout"], value='Tout', id='radio_graph5')
 ], body=True)
 
 cards3 = dbc.Card(children=[
@@ -346,8 +343,8 @@ cards3 = dbc.Card(children=[
     Input('dropdown_graph5', 'value'))
 def prixPlot(chambres, arrond):
     prix = repartition[['price', 'neighbourhood_cleansed', 'bedrooms']]
-    if chambres != 'Tout':
-        prix = prix.loc[(prix['bedrooms'] == int(chambres))]
+    # if chambres != 'Tout':
+    #     prix = prix.loc[(prix['bedrooms'] == int(chambres))]
     if arrond != 'Tout':
         prix = prix.loc[(prix['neighbourhood_cleansed'] == numeroToNom[arrond])]
     #considérons que 93% des valeurs sinon distribution trop grande, graphique moche
@@ -379,4 +376,4 @@ app.layout = dbc.Container(
 )
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True, port=8052)
