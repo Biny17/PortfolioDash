@@ -1,6 +1,6 @@
 # Annalyse et visualisation avec Python et Dash, création d'un site internet
 
-### L'[application](http://www.tristangallet.fr) sur un serveur Heroku : http://www.tristangallet.fr
+### L'[application](http://www.tristangallet.fr/) sur un serveur Heroku : http://www.tristangallet.fr
 
 Analyse et visualisation des données [de AirBNB Paris](http://insideairbnb.com/get-the-data)
 Avec Dash, Plotly, Numpy et Pandas
