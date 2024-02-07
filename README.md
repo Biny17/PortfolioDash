@@ -12,3 +12,5 @@ Ensuite tout ce qui concerne l'application est situé dans MyDashApp, les donné
 Le code du site en Python est dans [MyDashApp/src](MyDashApp/src/app.py)
 
 [neighbourhoods.geojson](neighbourhoods.geojson) contient les coordonnées des différents arrondissements de Paris pour la visualisation
+
+![](parisairbnb.webp)
